@@ -1,33 +1,47 @@
-const { connect, JSONCodec, headers } = require('nats');
+const express = require('express');
+const bodyParser = require('body-parser');
+const AppNATService = require('./nat.class');
+const cron = require('node-cron');
 
-async function publishLogs() {
-    const tokenNC = await connect({ervers: 'localhost:4222', user: 'jenny', pass: "232-432"});
-    const securedNC = await connect({port: 4222, token: 't0pS3cret!'});
+const app = express();
+const port = 3001;
 
-    const nc = await connect({ servers: 'nats://localhost:4222', jetstream: true });
-    const jc = JSONCodec();
-    const h = headers()
-    h.append("id", "12345"),
-    h.append("unix_time", Date.now().toString())
+app.use(bodyParser.json());
 
-    const channelx = 'channelx'; // JetStream subject for logging
-
-    // Log messages
-    const logMessages = [
-        { level: 'info', message: 'User logged in' },
-        { level: 'error', message: 'Database connection failed' },
-        { level: 'warning', message: 'Disk space low' }
-    ];
-
-    for (const msg of logMessages) {
-
-         nc.publish(channelx, jc.encode(msg), {headers: h});
-
-        console.log(`Published log message: ${msg}`);
-    }
-
-    await nc.flush();
-    await nc.close();
+const natsconfig = {
+    serverURL: "nats://localhost:4222",
+    clusterID: "test-cluster",
+    clientID: "abc-service",
+    channela: "channela",
+    channelb: "channelb",
+    channelc: "channelc",
 }
 
-publishLogs().catch(console.error);
+const NATService = new AppNATService(natsconfig.serverURL, natsconfig.clusterID, natsconfig.clientID);
+
+NATService.connect().then( async (nc) => {
+
+    // PUBLISH
+    cron.schedule('* * * * * *', (x) => {
+        console.log('Publishing a broadcast of', x.getSeconds());
+        NATService.publishMessage(natsconfig.channela, `broadcast ${x.getSeconds()} stream`)
+    });
+
+    cron.schedule('* * * * * *', (x) => {
+        console.log('Publishing a broadcast of', x.getSeconds());
+        NATService.publishMessage(natsconfig.channelb, `broadcast ${x.getSeconds()} stream`)
+    });
+
+
+    // CONSUME
+    // NATService.consume(natsconfig.channela, (action, data)=>{});
+
+})
+
+app.get('/publisher', (req, res) => {
+    res.json("publisher passed");
+});
+
+app.listen(port, () => {
+    console.log(`CRUD server listening at http://localhost:${port}/publisher`);
+});

@@ -1,23 +1,15 @@
-const { connect, JSONCodec } = require('nats');
+const express = require('express');
+const bodyParser = require('body-parser');
 
-async function subscribeToLogs() {
-    const nc = await connect({ servers: 'nats://localhost:4222', jetstream: true });
-    const jc = JSONCodec();
+const app = express();
+const port = 3000;
 
-    const channelx = 'channelx'; // JetStream subject for logging
+app.use(bodyParser.json());
 
-    const sub = nc.subscribe(channelx, { durable_name: 'log-consumer' });
-    const suby = nc.subscribe("time", {timeout: 1000});
+app.get('/consumer', (req, res) => {
+    res.json("consumer passed");
+});
 
-    (async () => {
-        for await (const msg of sub) {
-
-            const msgdata = jc.decode(msg.data);
-            console.log(msgdata);
-            console.log(`Received log message: ${msgdata}`);
-            
-        }
-    })().catch(console.error);
-}
-
-subscribeToLogs().catch(console.error);
+app.listen(port, () => {
+    console.log(`CRUD server listening at http://localhost:${port}/consumer`);
+});
