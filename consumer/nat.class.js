@@ -12,9 +12,7 @@ class AppNATService {
   }
 
   async connect() {
-
-    console.log(this.serverURL, this.clusterID, this.clientID);
-
+    // console.log(this.serverURL, this.clusterID, this.clientID);
     this.nc = await connect({
       servers: this.serverURL,
       reconnect: true,
@@ -89,52 +87,41 @@ class AppNATService {
 
     this.subscription = this.nc.subscribe(channel);
 
-    console.log(this.subscription)
+    console.log(this.subscription.getSubject())
 
     for await (const msg of this.subscription) {
       const decodedMsg = this.jc.decode(msg.data);
       console.log(decodedMsg)
-
+      console.info(`[time] handled #${this.subscription.getProcessed()}`);
+      console.log(`[time] #${this.subscription.getProcessed()} ignored - no reply subject`);
     }
-
-
     // Return the subscription object
     // return subscription;
   }
+
+  async replyRequest(channel) {
+    if (!this.nc) {
+      console.error("Not connected to NATS server");
+      return;
+    }
+
+    const sub = this.nc.subscribe(channel, {
+      
+      callback: (err, msg) => {
+        if (err) {
+          console.log("subscription error", err.message);
+          return;
+        }
+        
+        const name = msg.subject.substring(6);
+        msg.respond(`Seen`);
+      },
+    });
+
+  }
+
 
 }
 
 
 module.exports = AppNATService
-
-// // Example usage:
-// (async () => {
-//   const serverURL = "nats://localhost:4222";
-//   const clusterID = "test-cluster";
-//   const clientID = "crud-service";
-
-//   const crudService = new CRUDService(serverURL, clusterID, clientID);
-//   await crudService.connect();
-
-//   // Example: Publish a create action
-//   await crudService.publishMessage("create", { id: 1, name: "Example" });
-
-//   // Example: Consume messages
-//   crudService.consume((action, data) => {
-//     console.log(`Consumed message - Action: ${action}, Data:`, data);
-//   });
-
-//   // Wait for a while to simulate some activity
-//   await new Promise(resolve => setTimeout(resolve, 5000));
-
-//   await crudService.disconnect();
-// })();
-
-
-
-// RabbitMQ.connect(AppService.NOTIFICATION).then((channel) => {
-
-//   console.log('monitoring for', AppService.NOTIFICATION);
-
-//   RabbitMQ.monitorQueues(channel);
-// });

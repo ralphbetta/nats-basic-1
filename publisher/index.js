@@ -12,9 +12,9 @@ const natsconfig = {
     serverURL: "nats://localhost:4222",
     clusterID: "test-cluster",
     clientID: "abc-service",
-    channela: "channela",
-    channelb: "channelb",
-    channelc: "channelc",
+    channela: "channel.a",
+    channelb: "channel.b",
+    channelc: "channel.c",
 }
 
 const NATService = new AppNATService(natsconfig.serverURL, natsconfig.clusterID, natsconfig.clientID);
@@ -22,14 +22,19 @@ const NATService = new AppNATService(natsconfig.serverURL, natsconfig.clusterID,
 NATService.connect().then( async (nc) => {
 
     // PUBLISH
-    cron.schedule('* * * * * *', (x) => {
-        console.log('Publishing a broadcast of', x.getSeconds());
-        NATService.publishMessage(natsconfig.channela, `broadcast ${x.getSeconds()} stream`)
-    });
+    // cron.schedule('* * * * * *', (x) => {
+    //     console.log('Publisher log', x.getSeconds(), "for cha");
+    //     NATService.publishMessage(natsconfig.channela, `broadcast ${x.getSeconds()} stream to cha`)
+    // });
+
+    // cron.schedule('* * * * * *', (x) => {
+    //     console.log('Publisher log', x.getSeconds(), "for chb");
+    //     NATService.publishMessage(natsconfig.channelb, `broadcast ${x.getSeconds()} stream to chb`)
+    // });
 
     cron.schedule('* * * * * *', (x) => {
-        console.log('Publishing a broadcast of', x.getSeconds());
-        NATService.publishMessage(natsconfig.channelb, `broadcast ${x.getSeconds()} stream`)
+        console.log('Publisher log', x.getSeconds(), "for chb");
+        NATService.requestAction(natsconfig.channelc, `broadcast ${x.getSeconds()} stream to chb`)
     });
 
     // CONSUME

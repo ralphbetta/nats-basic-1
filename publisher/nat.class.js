@@ -1,4 +1,4 @@
-const { connect, JSONCodec, StringCodec } = require('nats');
+const { connect, JSONCodec, StringCodec, Empty } = require('nats');
 
 class AppNATService {
   constructor(serverURL, clusterID, clientID) {
@@ -79,6 +79,19 @@ class AppNATService {
       return;
     }
     this.nc.publish(action, this.jc.encode(data));
+  }
+
+  async requestAction(channel) {
+    if (!this.nc) {
+      console.error("Not connected to NATS server");
+      return;
+    }
+    try{
+      const requestInstance = await this.nc.request(channel, Empty, {timeout: 1000});
+      console.log(`got response: ${this.sc.decode(requestInstance.data)}`);
+    }catch(err){
+      console.log(`problem with request: ${err}`);
+    }
   }
 
   async consume(channel, callback) {
