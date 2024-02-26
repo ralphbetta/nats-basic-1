@@ -87,7 +87,9 @@ class AppNATService {
       return;
     }
     try{
-      const requestInstance = await this.nc.request(channel, Empty, {timeout: 1000});
+      // Sending empty request for ping and request with payload.
+      const requestInstance = await this.nc.request(channel, this.sc.encode("Dummy message"), {timeout: 1000});
+     
       console.log(`got response: ${this.sc.decode(requestInstance.data)}`);
     }catch(err){
       console.log(`problem with request: ${err}`);

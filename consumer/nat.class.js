@@ -112,7 +112,9 @@ class AppNATService {
           console.log("subscription error", err.message);
           return;
         }
-        
+
+        console.log(this.sc.decode(msg.data));
+
         const name = msg.subject.substring(6);
         msg.respond(`Seen`);
       },
