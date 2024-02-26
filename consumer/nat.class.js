@@ -21,7 +21,9 @@ class AppNATService {
       maxReconnectAttempts: -1,
       reconnectTimeWait: 1000,
       clusterID: this.clusterID,
-      clientID: this.clientID
+      clientID: this.clientID,
+      user: "jenny", //optional
+      pass: "867-5309", //optional
     });
 
     console.log(`Connected to ${this.serverURL}`);
@@ -52,19 +54,15 @@ class AppNATService {
     switch (action) {
       case "create":
         console.log("Create:", data);
-        // Perform create operation
         break;
       case "read":
         console.log("Read:", data);
-        // Perform read operation
         break;
       case "update":
         console.log("Update:", data);
-        // Perform update operation
         break;
       case "delete":
         console.log("Delete:", data);
-        // Perform delete operation
         break;
       default:
         console.log("Unknown action:", action);
@@ -77,6 +75,8 @@ class AppNATService {
       console.error("Not connected to NATS server");
       return;
     }
+    const js = this.nc.jetstream();
+    // js.publish(action, this.jc.encode(data));
     this.nc.publish(action, this.jc.encode(data));
   }
 
@@ -85,12 +85,36 @@ class AppNATService {
       console.error("Not connected to NATS server");
       return;
     }
-    
     const h = headers();
     h.append("id", "123456");
     h.append("unix_time", Date.now().toString());
     this.nc.publish(action, this.jc.encode(data), {headers: h });
   }
+
+  async requestAction(channel) {
+    if (!this.nc) {
+      console.error("Not connected to NATS server");
+      return;
+    }
+    try {
+      const requestInstance = await this.nc.request(channel, this.sc.encode("Dummy message"), { timeout: 1000 });
+
+      console.log(`got response: ${this.sc.decode(requestInstance.data)}`);
+    } catch (err) {
+      console.log(`problem with request: ${err}`);
+      switch (err.code) {
+        case ErrorCode.NoResponders:
+          console.log("no one is listening to 'hello.world'");
+          break;
+        case ErrorCode.Timeout:
+          console.log("someone is listening but didn't respond");
+          break;
+        default:
+          console.log("request failed", err);
+      }
+    }
+  }
+
 
   async consume(channel, callback) {
     if (!this.nc) {

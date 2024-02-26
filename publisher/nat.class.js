@@ -1,6 +1,7 @@
 const { connect, JSONCodec, StringCodec, Empty, ErrorCode } = require('nats');
 
 class AppNATService {
+
   constructor(serverURL, clusterID, clientID) {
     this.serverURL = serverURL;
     this.clusterID = clusterID;
@@ -12,9 +13,7 @@ class AppNATService {
   }
 
   async connect() {
-
-    console.log(this.serverURL, this.clusterID, this.clientID);
-
+    // console.log(this.serverURL, this.clusterID, this.clientID);
     this.nc = await connect({
       servers: this.serverURL,
       reconnect: true,
@@ -22,7 +21,9 @@ class AppNATService {
       maxReconnectAttempts: -1,
       reconnectTimeWait: 1000,
       clusterID: this.clusterID,
-      clientID: this.clientID
+      clientID: this.clientID,
+      user: "jenny", //optional
+      pass: "867-5309", //optional
     });
 
     console.log(`Connected to ${this.serverURL}`);
@@ -30,7 +31,7 @@ class AppNATService {
 
     return this.nc;
 
-    }
+  }
 
   async disconnect() {
     if (this.nc) {
@@ -40,11 +41,11 @@ class AppNATService {
   }
 
   async externalDisconnect(nc) {
-    const done = nc.closed(); 
+    const done = nc.closed();
     await nc.close();
     await done;
     console.log("NATS connection closed successfully");
-}
+  }
 
   async handleMessage(msg) {
     const action = msg.subject.split(".")[1];
@@ -53,19 +54,15 @@ class AppNATService {
     switch (action) {
       case "create":
         console.log("Create:", data);
-        // Perform create operation
         break;
       case "read":
         console.log("Read:", data);
-        // Perform read operation
         break;
       case "update":
         console.log("Update:", data);
-        // Perform update operation
         break;
       case "delete":
         console.log("Delete:", data);
-        // Perform delete operation
         break;
       default:
         console.log("Unknown action:", action);
@@ -78,7 +75,20 @@ class AppNATService {
       console.error("Not connected to NATS server");
       return;
     }
+    const js = this.nc.jetstream();
+    // js.publish(action, this.jc.encode(data));
     this.nc.publish(action, this.jc.encode(data));
+  }
+
+  async publishMessageWithHeader(action, data) {
+    if (!this.nc) {
+      console.error("Not connected to NATS server");
+      return;
+    }
+    const h = headers();
+    h.append("id", "123456");
+    h.append("unix_time", Date.now().toString());
+    this.nc.publish(action, this.jc.encode(data), { headers: h });
   }
 
   async requestAction(channel) {
@@ -86,12 +96,11 @@ class AppNATService {
       console.error("Not connected to NATS server");
       return;
     }
-    try{
-      // Sending empty request for ping and request with payload.
-      const requestInstance = await this.nc.request(channel, this.sc.encode("Dummy message"), {timeout: 1000});
-     
+    try {
+      const requestInstance = await this.nc.request(channel, this.sc.encode("Dummy message"), { timeout: 1000 });
+
       console.log(`got response: ${this.sc.decode(requestInstance.data)}`);
-    }catch(err){
+    } catch (err) {
       console.log(`problem with request: ${err}`);
       switch (err.code) {
         case ErrorCode.NoResponders:
@@ -113,53 +122,39 @@ class AppNATService {
     }
 
     this.subscription = this.nc.subscribe(channel);
-
     console.log(this.subscription)
 
     for await (const msg of this.subscription) {
       const decodedMsg = this.jc.decode(msg.data);
       console.log(decodedMsg)
-
     }
-
-
     // Return the subscription object
     // return subscription;
   }
 
+
+  async replyRequest(channel) {
+    if (!this.nc) {
+      console.error("Not connected to NATS server");
+      return;
+    }
+    const sub = this.nc.subscribe(channel, { 
+      callback: (err, msg) => {
+        if (err) {
+          console.log("subscription error", err.message);
+          return;
+        }
+        const paylaod = this.sc.decode(msg.data);
+        const streamedChannel = msg.channel;
+        msg.respond(`Seen`);
+
+      },
+    });
+
+  }
+
+  
 }
 
 
 module.exports = AppNATService
-
-// // Example usage:
-// (async () => {
-//   const serverURL = "nats://localhost:4222";
-//   const clusterID = "test-cluster";
-//   const clientID = "crud-service";
-
-//   const crudService = new CRUDService(serverURL, clusterID, clientID);
-//   await crudService.connect();
-
-//   // Example: Publish a create action
-//   await crudService.publishMessage("create", { id: 1, name: "Example" });
-
-//   // Example: Consume messages
-//   crudService.consume((action, data) => {
-//     console.log(`Consumed message - Action: ${action}, Data:`, data);
-//   });
-
-//   // Wait for a while to simulate some activity
-//   await new Promise(resolve => setTimeout(resolve, 5000));
-
-//   await crudService.disconnect();
-// })();
-
-
-
-// RabbitMQ.connect(AppService.NOTIFICATION).then((channel) => {
-
-//   console.log('monitoring for', AppService.NOTIFICATION);
-
-//   RabbitMQ.monitorQueues(channel);
-// });
