@@ -15,6 +15,9 @@ const natsconfig = {
     channela: "channel.a",
     channelb: "channel.b",
     channelc: "channel.c",
+    alpha: "alpha.subject",
+    betta: "betta.subject",
+    gamma: "gamma.subject",
 }
 
 const NATService = new AppNATService(natsconfig.serverURL, natsconfig.clusterID, natsconfig.clientID);
@@ -39,7 +42,6 @@ NATService.connect().then( async (nc) => {
 
     // CONSUME
     // NATService.consume(natsconfig.channela, (action, data)=>{});
-
 })
 
 app.get('/publisher', (req, res) => {

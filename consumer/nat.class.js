@@ -27,10 +27,7 @@ class AppNATService {
     });
 
     console.log(`Connected to ${this.serverURL}`);
-    this.subscription = this.nc.subscribe("crud");
-
     return this.nc;
-
     }
 
   async disconnect() {

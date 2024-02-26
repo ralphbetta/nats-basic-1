@@ -14,6 +14,9 @@ const natsconfig = {
     channela: "channel.a",
     channelb: "channel.b",
     channelc: "channel.c",
+    alpha: "alpha.subject",
+    betta: "betta.subject",
+    gamma: "gamma.subject",
 }
 const NATService = new AppNATService(natsconfig.serverURL, natsconfig.clusterID, natsconfig.clientID);
 
