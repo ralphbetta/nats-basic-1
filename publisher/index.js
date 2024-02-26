@@ -32,7 +32,6 @@ NATService.connect().then( async (nc) => {
         NATService.publishMessage(natsconfig.channelb, `broadcast ${x.getSeconds()} stream`)
     });
 
-
     // CONSUME
     // NATService.consume(natsconfig.channela, (action, data)=>{});
 

@@ -9,6 +9,10 @@ async function subscribeToLogs() {
     const sub = nc.subscribe(channelx, { durable_name: 'log-consumer' });
     const suby = nc.subscribe("time", {timeout: 1000});
 
+    const msg = sub.getSubject();
+
+    console.log("this is message", msg);
+
     (async () => {
         for await (const msg of sub) {
 
