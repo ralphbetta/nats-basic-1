@@ -19,7 +19,8 @@ const NATService = new AppNATService(natsconfig.serverURL, natsconfig.clusterID,
 
 NATService.connect().then( async (nc) => {
 
-    NATService.consume(natsconfig.channelb, (action, data)=>{});
+    NATService.consume(natsconfig.channela, (action, data)=>{});
+
     NATService.replyRequest(natsconfig.channelc, (action, data)=>{});
     
 });

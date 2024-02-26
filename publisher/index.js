@@ -22,10 +22,10 @@ const NATService = new AppNATService(natsconfig.serverURL, natsconfig.clusterID,
 NATService.connect().then( async (nc) => {
 
     // PUBLISH
-    // cron.schedule('* * * * * *', (x) => {
-    //     console.log('Publisher log', x.getSeconds(), "for cha");
-    //     NATService.publishMessage(natsconfig.channela, `broadcast ${x.getSeconds()} stream to cha`)
-    // });
+    cron.schedule('* * * * * *', (x) => {
+        console.log('Publisher log', x.getSeconds(), "for cha");
+        NATService.publishMessage(natsconfig.channela, `publshed data ${x.getSeconds()}`)
+    });
 
     // cron.schedule('* * * * * *', (x) => {
     //     console.log('Publisher log', x.getSeconds(), "for chb");
@@ -33,8 +33,8 @@ NATService.connect().then( async (nc) => {
     // });
 
     cron.schedule('* * * * * *', (x) => {
-        console.log('Publisher log', x.getSeconds(), "for chb");
-        NATService.requestAction(natsconfig.channelc, `broadcast ${x.getSeconds()} stream to chb`)
+        console.log(`pub - ${natsconfig.channelc} :`, x.getSeconds());
+        NATService.requestAction(natsconfig.channelc, `broadcast chb ${x.getSeconds()}`)
     });
 
     // CONSUME

@@ -1,4 +1,4 @@
-const { connect, JSONCodec, StringCodec, Empty } = require('nats');
+const { connect, JSONCodec, StringCodec, Empty, ErrorCode } = require('nats');
 
 class AppNATService {
   constructor(serverURL, clusterID, clientID) {
@@ -93,6 +93,16 @@ class AppNATService {
       console.log(`got response: ${this.sc.decode(requestInstance.data)}`);
     }catch(err){
       console.log(`problem with request: ${err}`);
+      switch (err.code) {
+        case ErrorCode.NoResponders:
+          console.log("no one is listening to 'hello.world'");
+          break;
+        case ErrorCode.Timeout:
+          console.log("someone is listening but didn't respond");
+          break;
+        default:
+          console.log("request failed", err);
+      }
     }
   }
 

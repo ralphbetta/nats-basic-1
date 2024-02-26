@@ -1,6 +1,7 @@
-const { connect, JSONCodec, StringCodec } = require('nats');
+const { connect, JSONCodec, StringCodec, headers } = require('nats');
 
 class AppNATService {
+
   constructor(serverURL, clusterID, clientID) {
     this.serverURL = serverURL;
     this.clusterID = clusterID;
@@ -79,21 +80,30 @@ class AppNATService {
     this.nc.publish(action, this.jc.encode(data));
   }
 
+  async publishMessageWithHeader(action, data) {
+    if (!this.nc) {
+      console.error("Not connected to NATS server");
+      return;
+    }
+    
+    const h = headers();
+    h.append("id", "123456");
+    h.append("unix_time", Date.now().toString());
+    this.nc.publish(action, this.jc.encode(data), {headers: h });
+  }
+
   async consume(channel, callback) {
     if (!this.nc) {
       console.error("Not connected to NATS server");
       return;
     }
-
+    
     this.subscription = this.nc.subscribe(channel);
-
-    console.log(this.subscription.getSubject())
+    const subject = this.subscription.getSubject();
 
     for await (const msg of this.subscription) {
       const decodedMsg = this.jc.decode(msg.data);
       console.log(decodedMsg)
-      console.info(`[time] handled #${this.subscription.getProcessed()}`);
-      console.log(`[time] #${this.subscription.getProcessed()} ignored - no reply subject`);
     }
     // Return the subscription object
     // return subscription;
@@ -104,19 +114,16 @@ class AppNATService {
       console.error("Not connected to NATS server");
       return;
     }
-
-    const sub = this.nc.subscribe(channel, {
-      
+    const sub = this.nc.subscribe(channel, { 
       callback: (err, msg) => {
         if (err) {
           console.log("subscription error", err.message);
           return;
         }
-
-        console.log(this.sc.decode(msg.data));
-
-        const name = msg.subject.substring(6);
+        const paylaod = this.sc.decode(msg.data);
+        const streamedChannel = msg.channel;
         msg.respond(`Seen`);
+
       },
     });
 
