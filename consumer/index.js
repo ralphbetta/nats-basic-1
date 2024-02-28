@@ -24,7 +24,7 @@ NATService.connect().then( async (nc) => {
 
     NATService.consume(natsconfig.channela, (action, data)=>{});
 
-    NATService.replyRequest(natsconfig.channelc, (action, data)=>{});
+    // NATService.replyRequest(natsconfig.channelc, (action, data)=>{});
     
 });
 
