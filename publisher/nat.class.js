@@ -7,6 +7,7 @@ class AppNATService {
     this.clusterID = clusterID;
     this.clientID = clientID;
     this.nc = null;
+    this.js = null
     this.subscription = null;
     this.sc = StringCodec();
     this.jc = JSONCodec();
@@ -26,8 +27,11 @@ class AppNATService {
       pass: "867-5309", //optional
     });
 
-    console.log(`Connected to ${this.serverURL}`);
+    this.js = this.nc.jetstream();
     this.subscription = this.nc.subscribe("crud");
+
+    console.log(`Connected to ${this.serverURL}`);
+
 
     return this.nc;
 
@@ -70,14 +74,21 @@ class AppNATService {
     }
   }
 
-  async publishMessage(action, data) {
+  async publishMessage(subject, data) {
     if (!this.nc) {
       console.error("Not connected to NATS server");
       return;
     }
-    const js = this.nc.jetstream();
-    // js.publish(action, this.jc.encode(data));
-    this.nc.publish(action, this.jc.encode(data));
+    try {
+
+      // const publicationAcknowlegment = await this.js.publish(subject, this.jc.encode(data));  //requires response
+       this.nc.publish(subject, this.jc.encode(data));
+
+      console.log("this is passed", publicationAcknowlegment);
+
+    } catch (error) {
+      console.log("Error Publishing", error.message);
+    }
   }
 
   async publishMessageWithHeader(action, data) {
@@ -138,7 +149,7 @@ class AppNATService {
       console.error("Not connected to NATS server");
       return;
     }
-    const sub = this.nc.subscribe(channel, { 
+    const sub = this.nc.subscribe(channel, {
       callback: (err, msg) => {
         if (err) {
           console.log("subscription error", err.message);
@@ -153,7 +164,7 @@ class AppNATService {
 
   }
 
-  
+
 }
 
 
